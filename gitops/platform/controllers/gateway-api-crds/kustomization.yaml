@@ -1,0 +1,7 @@
+# Gateway API's CRDs (GatewayClass, Gateway, HTTPRoute, ...) — a prerequisite
+# for Envoy Gateway, not bundled with its Helm chart. Standard channel,
+# upstream release artifact, not vendored: bump the version here to upgrade.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml

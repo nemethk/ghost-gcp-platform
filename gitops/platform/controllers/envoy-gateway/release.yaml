@@ -1,0 +1,26 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: envoy-gateway
+spec:
+  interval: 5m
+  chartRef:
+    kind: OCIRepository
+    name: envoy-gateway
+  # Namespace itself comes from gitops/namespaces/ (the controllers
+  # Kustomization dependsOn it) — not created here, so it's not scattered
+  # across each controller's own install flow.
+  targetNamespace: envoy-gateway-system
+  values:
+    # This bounds the envoy-gateway controller itself, not the Envoy
+    # data-plane proxy it manages — that's bounded separately, in
+    # gitops/platform/configs/gateway/demo/envoy-proxy.yaml.
+    deployment:
+      envoyGateway:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi

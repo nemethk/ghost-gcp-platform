@@ -1,0 +1,10 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ghost
+spec:
+  values:
+    ghost:
+      url: "https://localhost:9443"
+      database:
+        existingSecret: ghost-db-credentials

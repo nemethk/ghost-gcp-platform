@@ -1,0 +1,23 @@
+# One Alert covering the whole GitOps chain, not just Ghost:
+# - Kustomization/* in flux-system: namespaces, controllers, configs, apps
+#   themselves — catches a broken promotion, a bad tag, a failed reconcile
+#   anywhere in the pipeline.
+# - HelmRelease/* in flux-system: cert-manager, envoy-gateway.
+# - HelmRelease/* in ghost: Ghost's own release — fires on every promotion.
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Alert
+metadata:
+  name: pipeline
+  namespace: flux-system
+spec:
+  eventSeverity: info
+  eventSources:
+    - kind: Kustomization
+      name: "*"
+    - kind: HelmRelease
+      name: "*"
+    - kind: HelmRelease
+      name: "*"
+      namespace: ghost
+  providerRef:
+    name: slack

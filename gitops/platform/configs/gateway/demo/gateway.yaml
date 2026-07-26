@@ -1,0 +1,21 @@
+# One shared Gateway per environment — Ghost's HTTPRoute attaches to this by
+# name (parentRefs), same shape as every environment (only the Docker-level
+# host port differs, per TLS.md; that's outside Kubernetes entirely).
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: ghost
+  annotations:
+    cert-manager.io/cluster-issuer: ghost-selfsigned
+spec:
+  gatewayClassName: envoy-gateway
+  listeners:
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: localhost
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: ghost-tls

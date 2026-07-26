@@ -1,0 +1,129 @@
+# Picked up automatically by kube-prometheus-stack's Grafana sidecar (watches
+# for the grafana_dashboard label across namespaces — see
+# grafana.sidecar.dashboards.searchNamespace: ALL in
+# gitops/platform/controllers/monitoring/release-kube-prometheus-stack.yaml).
+# Lives with the app it's about, not with the monitoring stack — same
+# ownership split as everywhere else in this repo. Harmless in Acceptance/
+# Production too, even though only Test currently runs Grafana to render it.
+#
+# CPU/memory panels depend on cAdvisor metrics reaching Prometheus through
+# vCluster's node virtualization (sync.fromHost.nodes.enabled: false in
+# infra/demo/vclusters/test.yaml) — unverified until the first live run: if
+# those two panels come back empty, kube-state-metrics-backed panels (pod
+# status, restarts) and the Loki logs panel do not depend on that and should
+# still work.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ghost-dashboard
+  labels:
+    grafana_dashboard: "1"
+data:
+  ghost.json: |
+    {
+      "title": "Ghost",
+      "uid": "ghost-overview",
+      "schemaVersion": 39,
+      "refresh": "30s",
+      "time": { "from": "now-6h", "to": "now" },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Pod Ready",
+          "datasource": "Prometheus",
+          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+          "targets": [
+            {
+              "expr": "sum(kube_pod_status_phase{namespace=\"ghost\", phase=\"Running\"})",
+              "legendFormat": "running"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "red", "value": null },
+                  { "color": "green", "value": 1 }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Pod Restarts (1h)",
+          "datasource": "Prometheus",
+          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+          "targets": [
+            {
+              "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"ghost\", container=\"ghost\"}[1h]))",
+              "legendFormat": "restarts"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  { "color": "green", "value": null },
+                  { "color": "orange", "value": 1 },
+                  { "color": "red", "value": 3 }
+                ]
+              }
+            },
+            "overrides": []
+          }
+        },
+        {
+          "id": 3,
+          "type": "timeseries",
+          "title": "CPU Usage",
+          "datasource": "Prometheus",
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "targets": [
+            {
+              "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"ghost\", container=\"ghost\"}[5m]))",
+              "legendFormat": "cpu cores"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] }
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "Memory Usage",
+          "datasource": "Prometheus",
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "targets": [
+            {
+              "expr": "sum(container_memory_working_set_bytes{namespace=\"ghost\", container=\"ghost\"})",
+              "legendFormat": "memory"
+            }
+          ],
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] }
+        },
+        {
+          "id": 5,
+          "type": "logs",
+          "title": "Ghost Logs",
+          "datasource": "Loki",
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 12 },
+          "targets": [
+            {
+              "expr": "{namespace=\"ghost\"}"
+            }
+          ],
+          "options": {
+            "showTime": true,
+            "wrapLogMessage": true,
+            "sortOrder": "Descending"
+          }
+        }
+      ]
+    }

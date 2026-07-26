@@ -1,0 +1,12 @@
+# notification-controller ships with every Flux install already — no new
+# controller to add. address comes from secrets.enc.yaml, never committed in
+# plaintext (unlike the example this pattern was borrowed from).
+apiVersion: notification.toolkit.fluxcd.io/v1beta3
+kind: Provider
+metadata:
+  name: slack
+  namespace: flux-system
+spec:
+  type: slack
+  secretRef:
+    name: slack-webhook

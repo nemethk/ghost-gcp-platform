@@ -1,0 +1,61 @@
+# Single-binary mode, filesystem storage — the microservices/S3 deployment
+# mode this chart also supports is built for production scale, not a laptop
+# demo. No replication (replication_factor: 1) since there's only one binary.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: loki
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: loki
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+  targetNamespace: monitoring
+  values:
+    deploymentMode: SingleBinary
+    singleBinary:
+      replicas: 1
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 250m
+          memory: 512Mi
+    loki:
+      commonConfig:
+        replication_factor: 1
+      storage:
+        type: filesystem
+      schemaConfig:
+        configs:
+          - from: "2024-01-01"
+            store: tsdb
+            object_store: filesystem
+            schema: v13
+            index:
+              prefix: index_
+              period: 24h
+      auth_enabled: false
+    # Chart-bundled extras not needed for a demo: no self-monitoring
+    # ServiceMonitor/canary noise, no separate gateway proxy in front of a
+    # single Loki instance, no chunk/rule backend components this mode
+    # doesn't use.
+    monitoring:
+      selfMonitoring:
+        enabled: false
+      lokiCanary:
+        enabled: false
+    test:
+      enabled: false
+    gateway:
+      enabled: false
+    backend:
+      replicas: 0
+    read:
+      replicas: 0
+    write:
+      replicas: 0

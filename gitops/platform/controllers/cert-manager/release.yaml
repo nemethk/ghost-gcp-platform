@@ -1,0 +1,60 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: cert-manager
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: cert-manager
+      sourceRef:
+        kind: HelmRepository
+        name: cert-manager
+  # Namespace itself comes from gitops/namespaces/ (the controllers
+  # Kustomization dependsOn it) — not created here, so it's not scattered
+  # across each controller's own install flow.
+  targetNamespace: cert-manager
+  values:
+    crds:
+      enabled: true
+    # Off by default — cert-manager's Gateway API support (issuing
+    # Certificates from annotated Gateway listeners, replacing what
+    # ingress-shim did for Ingress) has to be explicitly enabled.
+    config:
+      apiVersion: controller.config.cert-manager.io/v1alpha1
+      kind: ControllerConfiguration
+      enableGatewayAPI: true
+    # Explicit everywhere, same discipline as gitops/platform/controllers/
+    # monitoring/ — chart defaults for these four components aren't sized
+    # for a shared laptop budget.
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+    webhook:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 32Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
+    cainjector:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 32Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi
+    startupapicheck:
+      resources:
+        requests:
+          cpu: 25m
+          memory: 32Mi
+        limits:
+          cpu: 50m
+          memory: 64Mi

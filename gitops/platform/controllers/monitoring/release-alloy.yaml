@@ -1,0 +1,92 @@
+# Replaces Promtail. loki.source.kubernetes streams logs via the Kubernetes
+# API's pods/log endpoint (the same mechanism `kubectl logs` uses) instead of
+# hostPath-mounting the real node's /var/log/pods — the latter is what
+# Promtail does, and its reliability inside vCluster's node virtualization
+# was unverified (sync.fromHost.nodes.enabled: false in
+# infra/demo/vclusters/test.yaml). API-based collection goes through
+# vCluster's own proxy layer, the same path kubectl logs already relies on,
+# so it doesn't carry that risk. Pattern adapted from examples/monitoring
+# (internal/components/alloy/deploy.go) — no namespace allow-list filter
+# added, since that example's is scoped to a specific multi-tenant label
+# convention that doesn't apply here; the dashboard's Logs panel already
+# filters to namespace="ghost" at query time instead.
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: alloy
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: alloy
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+  targetNamespace: monitoring
+  values:
+    alloy:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 100m
+          memory: 256Mi
+      configMap:
+        create: true
+        content: |
+          discovery.kubernetes "pods" {
+            role = "pod"
+          }
+
+          discovery.relabel "pod_logs" {
+            targets = discovery.kubernetes.pods.targets
+
+            rule {
+              source_labels = ["__meta_kubernetes_namespace"]
+              target_label  = "namespace"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_name"]
+              target_label  = "pod"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_pod_container_name"]
+              target_label  = "container"
+            }
+
+            rule {
+              source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name"]
+              separator     = "/"
+              target_label  = "job"
+            }
+          }
+
+          loki.source.kubernetes "pod_logs" {
+            targets    = discovery.relabel.pod_logs.output
+            forward_to = [loki.process.drop_noisy.receiver]
+          }
+
+          loki.process "drop_noisy" {
+            forward_to = [loki.write.default.receiver]
+
+            // Drop Kubernetes liveness/readiness probe and metrics scrape lines.
+            stage.drop {
+              expression          = "(?i)(GET|POST|PUT|DELETE|HEAD)\\s+/(healthz|readyz|health|livez|metrics|ready)"
+              drop_counter_reason = "health_probe"
+            }
+
+            // Drop empty and whitespace-only lines.
+            stage.drop {
+              expression          = "^\\s*$"
+              drop_counter_reason = "empty_line"
+            }
+          }
+
+          loki.write "default" {
+            endpoint {
+              url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+            }
+          }

@@ -1,0 +1,17 @@
+# SelfSigned only — see TLS.md for why (ACME has no local-only validation
+# path). The shared Gateway (gateway.yaml) carries the
+# cert-manager.io/cluster-issuer annotation, which cert-manager's Gateway API
+# integration (gateway-shim, enabled via values.config.enableGatewayAPI on the
+# HelmRelease) picks up to create the matching Certificate automatically — no
+# separate Certificate resource needed here.
+#
+# In its own Kustomization (gitops/platform/configs/, not bundled with
+# gitops/platform/controllers/) so it can dependsOn cert-manager's CRDs
+# actually existing first — applying a ClusterIssuer before cert-manager's CRD
+# is established would fail.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: ghost-selfsigned
+spec:
+  selfSigned: {}

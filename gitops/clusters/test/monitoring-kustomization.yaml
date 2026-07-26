@@ -1,0 +1,19 @@
+# Test-only — points directly at gitops/platform/controllers/monitoring/,
+# which is deliberately NOT included in platform/controllers/kustomization.yaml
+# (the aggregator shared by all three envs' controllers Kustomization). This
+# is the one intentional asymmetry in an otherwise identical Test/Acceptance/
+# Production controller set — see release-kube-prometheus-stack.yaml for why.
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: monitoring
+  namespace: flux-system
+spec:
+  interval: 5m
+  path: ./gitops/platform/controllers/monitoring
+  prune: true
+  dependsOn:
+    - name: namespaces
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

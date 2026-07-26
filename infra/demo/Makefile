@@ -6,6 +6,11 @@ export SOPS_AGE_KEY_FILE
 # Project-local, isolated kubeconfig — for demo purpose only.
 KUBECONFIG       := $(CURDIR)/kubeconfig
 export KUBECONFIG
+# Falls back to gh's already-authenticated token so flux bootstrap doesn't
+# prompt interactively — only used if GITHUB_TOKEN isn't already set, and
+# only actually runs `gh auth token` for targets that reference it.
+GITHUB_TOKEN     ?= $(shell gh auth token)
+export GITHUB_TOKEN
 
 .PHONY: up clusters down pause resume status
 
@@ -15,8 +20,8 @@ export KUBECONFIG
 clusters: $(addprefix cluster-,$(ENVS))
 
 cluster-%:
-	@echo "==> $*: creating vCluster"
-	@vcluster create $* --driver docker --values vclusters/$*.yaml
+	@echo "==> $*: creating vCluster (--upgrade: safe to re-run if it already exists)"
+	@vcluster create $* --driver docker --values vclusters/$*.yaml --upgrade
 
 # Full flow for a single environment — e.g. `make up-test` to verify Flux on
 # one cluster before rolling out to all three (the bring-up-Test-first gate

@@ -52,9 +52,14 @@ up-%: cluster-%
 	kubectl --context $$ctx apply --namespace ghost -f mysql.yaml || exit 1
 
 up: $(addprefix up-,$(ENVS))
-	@echo "Test:        https://localhost:9443"
-	@echo "Acceptance:  https://localhost:8443"
-	@echo "Production:  https://localhost:443"
+	@echo "Reached via vind's built-in LoadBalancer (LB.md) — add each"
+	@echo "environment's own bridge IP to /etc/hosts first:"
+	@echo "  kubectl --context vcluster-docker_test       get svc -n envoy-gateway-system"
+	@echo "  kubectl --context vcluster-docker_acceptance get svc -n envoy-gateway-system"
+	@echo "  kubectl --context vcluster-docker_production get svc -n envoy-gateway-system"
+	@echo "Test:        https://ghost.test.local"
+	@echo "Acceptance:  https://ghost.acceptance.local"
+	@echo "Production:  https://ghost.local"
 
 down-%:
 	@echo "==> $*: deleting vCluster"

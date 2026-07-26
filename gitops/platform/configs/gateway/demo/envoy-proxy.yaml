@@ -11,10 +11,12 @@
 # is demo-track only, not part of gitops/platform/controllers/envoy-gateway/
 # (which stays identical across demo and real GKE).
 #
-# node-role.kubernetes.io/control-plane is the standard Kubernetes label, but
-# hasn't been confirmed against a live vCluster yet (none has been created).
-# Verify with `kubectl get nodes --show-labels` on first bring-up; fall back
-# to `kubernetes.io/hostname: <exact-node-name>` if it's absent.
+# node-role.kubernetes.io/control-plane confirmed present on a live vCluster.
+#
+# hostNetwork is required too — nodeSelector only controls scheduling; the
+# pod still gets its own overlay-network IP otherwise, unreachable from
+# Docker's port mapping. dnsPolicy must go with it (hostNetwork pods skip
+# normal cluster DNS config by default).
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
@@ -26,6 +28,8 @@ spec:
     kubernetes:
       envoyDeployment:
         pod:
+          hostNetwork: true
+          dnsPolicy: ClusterFirstWithHostNet
           nodeSelector:
             node-role.kubernetes.io/control-plane: "true"
           tolerations:

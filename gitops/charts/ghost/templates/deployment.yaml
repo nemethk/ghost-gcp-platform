@@ -49,16 +49,28 @@ spec:
             - name: content
               mountPath: /var/lib/ghost/content
           {{- end }}
+          # httpHeaders: Ghost's `url` is https, so it redirects any request it
+          # doesn't consider already-secure. Real traffic goes through Envoy
+          # Gateway (which terminates TLS), but these probes hit the pod's
+          # internal IP directly, bypassing Envoy — X-Forwarded-Proto tells
+          # Ghost to treat the probe as already-secure instead of redirecting
+          # it somewhere unreachable from inside the pod network.
           livenessProbe:
             httpGet:
               path: /
               port: http
+              httpHeaders:
+                - name: X-Forwarded-Proto
+                  value: https
             initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
           readinessProbe:
             httpGet:
               path: /
               port: http
+              httpHeaders:
+                - name: X-Forwarded-Proto
+                  value: https
             initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
             periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
           resources:

@@ -1,0 +1,86 @@
+# replicas is deliberately fixed at 1: Ghost has no shared cache/session store
+# and no coordination between scheduled jobs, so multiple replicas produce
+# duplicate scheduled emails/posts, not extra capacity. There is no HPA in this
+# chart for the same reason — autoscaling replicas would actively cause that
+# bug class. Availability comes from Kubernetes' own fast rescheduling on
+# failure, not from redundant replicas. See docs/architecture.md.
+replicaCount: 1
+
+image:
+  repository: ghost
+  tag: "6.39.0"
+  pullPolicy: IfNotPresent
+
+# Recreate, not RollingUpdate: the content PVC is mounted by a single pod at a
+# time. A rolling update would try to start the new pod (and mount the volume)
+# before the old one releases it.
+updateStrategy: Recreate
+
+service:
+  type: ClusterIP
+  port: 2368
+
+# TLS termination happens on the shared, platform-owned Gateway (see
+# gitops/platform/configs/gateway/), not per-app — the chart only needs to
+# know which Gateway to attach to and which hostname to match.
+#
+# hostname is a real field, not a demo-only workaround: Gateway API's
+# Hostname type validates as an RFC-1123 DNS subdomain (dns1123Subdomain),
+# which doesn't require multiple labels — "localhost" is structurally valid
+# even though it isn't a real FQDN. TLS SNI never includes a port, and
+# implementations match HTTPRoute hostnames against the Host header with the
+# port stripped, so this value is correct regardless of which port (9443/
+# 8443/443) is actually used. On the real-GCP track this same field holds a
+# genuine FQDN — this is the demo-track's value, not a different mechanism.
+httpRoute:
+  enabled: true
+  gatewayName: ghost
+  hostname: localhost
+
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClassName: ""
+  accessMode: ReadWriteOnce
+
+ghost:
+  # Ghost's own config key is the bare "url" env var (no prefix) — matches the
+  # database__connection__* nesting convention, confirmed against a working
+  # reference deployment.
+  url: "https://localhost:9443"
+  database:
+    client: mysql
+    host: mysql
+    port: 3306
+    name: ghost
+    user: ghost
+    # Name of a pre-existing Secret holding the password — created out of
+    # band (SOPS-decrypted overlay resource on real GKE; a Makefile-generated,
+    # never-committed Secret for the local demo). This chart never creates or
+    # contains the secret itself.
+    existingSecret: ""
+    passwordKey: database-password
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Off by default: with replicaCount 1, a PDB's maxUnavailable can only
+# meaningfully be 0, which blocks every voluntary node drain (upgrades,
+# maintenance) for as long as this is the only replica. Real tradeoff, not a
+# free win — enable deliberately per environment, not as a default.
+podDisruptionBudget:
+  enabled: false
+  maxUnavailable: 0
+
+probes:
+  liveness:
+    initialDelaySeconds: 30
+    periodSeconds: 15
+  readiness:
+    initialDelaySeconds: 10
+    periodSeconds: 10

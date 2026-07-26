@@ -1,0 +1,10 @@
+Ghost is available at:
+  {{ .Values.ghost.url }}
+
+Admin panel:
+  {{ .Values.ghost.url }}/ghost/
+  First visit here on a fresh database shows Ghost's own setup wizard —
+  you create the admin email/password yourself, nothing to look up.
+
+Check rollout status:
+  kubectl rollout status deployment/{{ include "ghost.fullname" . }} -n {{ .Release.Namespace }}

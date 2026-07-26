@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ghost
+description: Ghost, behind a Gateway API HTTPRoute, talking to an external MySQL endpoint
+type: application
+version: 0.1.0
+appVersion: "6.39.0"

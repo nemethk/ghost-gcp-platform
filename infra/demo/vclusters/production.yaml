@@ -1,0 +1,38 @@
+# vcluster values for the Production environment — one worker node (see
+# test.yaml for why).
+#
+# Deploy with:
+#   vcluster use driver docker
+#   vcluster create production --driver docker --values production.yaml
+
+networking:
+  podCIDR: 10.64.0.0/16
+  serviceCIDR: 10.128.0.0/16
+
+controlPlane:
+  distro:
+    k8s:
+      enabled: true
+      image:
+        tag: v1.36.0
+  statefulSet:
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1
+        memory: 1Gi
+
+experimental:
+  docker:
+    nodes:
+      - name: worker-1
+    ports:
+      - "80:80"
+      - "443:443"
+
+sync:
+  fromHost:
+    nodes:
+      enabled: false

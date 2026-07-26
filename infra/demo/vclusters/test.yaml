@@ -1,0 +1,50 @@
+# vcluster values for the Test environment — one worker node, so workloads
+# schedule there rather than on the control-plane node (avoids relying on
+# whether the control-plane node's default taint allows scheduling at all).
+#
+# Deploy with:
+#   vcluster use driver docker
+#   vcluster create test --driver docker --values test.yaml
+#
+# After first creation, consider pinning image.tag to the exact resolved
+# version (`kubectl version -o yaml`) if reproducibility across runs matters
+# more than tracking vCluster's current default.
+
+# Avoids conflicts with a developer's VPN/home network. Requires a full
+# delete+recreate to change, not `--upgrade`.
+networking:
+  podCIDR: 10.64.0.0/16
+  serviceCIDR: 10.128.0.0/16
+
+controlPlane:
+  distro:
+    k8s:
+      enabled: true
+      image:
+        tag: v1.36.0
+  # Bumped from 200m/256Mi requests, 1 CPU/1Gi limits — kube-prometheus-stack
+  # (monitoring/) adds real CRD count and continuous watch/list load
+  # (kube-state-metrics, node-exporter, ServiceMonitor reconciliation) that
+  # the smaller default budget wasn't sized for. Test-only, so Acceptance and
+  # Production stay at the original values.
+  statefulSet:
+    resources:
+      requests:
+        cpu: 500m
+        memory: 512Mi
+      limits:
+        cpu: 2
+        memory: 2Gi
+
+experimental:
+  docker:
+    nodes:
+      - name: worker-1
+    ports:
+      - "9080:80"
+      - "9443:443"
+
+sync:
+  fromHost:
+    nodes:
+      enabled: false

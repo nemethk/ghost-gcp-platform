@@ -15,8 +15,9 @@
 #
 # hostNetwork is required too — nodeSelector only controls scheduling; the
 # pod still gets its own overlay-network IP otherwise, unreachable from
-# Docker's port mapping. dnsPolicy must go with it (hostNetwork pods skip
-# normal cluster DNS config by default).
+# Docker's port mapping. No dnsPolicy here — EnvoyProxy's pod schema doesn't
+# expose that field at all (rejected: "not declared in schema"), so this
+# relies on Envoy's own xDS/EDS config not needing cluster DNS resolution.
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
@@ -29,7 +30,6 @@ spec:
       envoyDeployment:
         pod:
           hostNetwork: true
-          dnsPolicy: ClusterFirstWithHostNet
           nodeSelector:
             node-role.kubernetes.io/control-plane: "true"
           tolerations:

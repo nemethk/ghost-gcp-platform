@@ -5,6 +5,8 @@ metadata:
 spec:
   values:
     ghost:
-      url: "https://localhost:9443"
+      url: "https://ghost.test.local"
       database:
         existingSecret: ghost-db-credentials
+    httpRoute:
+      hostname: ghost.test.local

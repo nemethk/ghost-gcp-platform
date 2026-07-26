@@ -24,13 +24,12 @@ controlPlane:
         cpu: 1
         memory: 1Gi
 
+# No experimental.docker.ports — see test.yaml for why. Reached at
+# https://ghost.acceptance.local via vind's built-in LoadBalancer.
 experimental:
   docker:
     nodes:
       - name: worker-1
-    ports:
-      - "8080:80"
-      - "8443:443"
 
 sync:
   fromHost:

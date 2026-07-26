@@ -1,23 +1,11 @@
-# Demo-only: pins Envoy Gateway's data-plane proxy Deployment onto the
-# vCluster's control-plane node — the only node whose host ports Docker
-# actually publishes (experimental.docker.ports in infra/demo/vclusters/
-# <env>.yaml). Without this, the proxy pod could schedule onto "worker-1"
-# instead and never be reachable at https://localhost:9443/8443/443, even
-# though everything else in the cluster looks healthy. Mirrors kind's own
-# nodeSelector+toleration pattern for its ingress controller.
-#
-# Real GKE has no equivalent node — a genuine cloud LoadBalancer gets an
-# external IP regardless of which node the proxy lands on — so this resource
-# is demo-track only, not part of gitops/platform/controllers/envoy-gateway/
-# (which stays identical across demo and real GKE).
-#
-# node-role.kubernetes.io/control-plane confirmed present on a live vCluster.
-#
-# hostNetwork is required too — nodeSelector only controls scheduling; the
-# pod still gets its own overlay-network IP otherwise, unreachable from
-# Docker's port mapping. No dnsPolicy here — EnvoyProxy's pod schema doesn't
-# expose that field at all (rejected: "not declared in schema"), so this
-# relies on Envoy's own xDS/EDS config not needing cluster DNS resolution.
+# Only bounds the data-plane proxy's resources now — no node-pinning needed.
+# Ghost is reached via vind's built-in per-Service LoadBalancer/HAProxy
+# container (LB.md), which forwards to the proxy's Service regardless of
+# which node the pod actually lands on. The earlier hostNetwork/nodeSelector
+# approach (for making Docker's own port-publishing reach the proxy
+# directly) was abandoned — EnvoyProxy's pod schema doesn't even expose
+# hostNetwork/dnsPolicy as fields, and the LoadBalancer path works without
+# any of that.
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
@@ -28,14 +16,6 @@ spec:
     type: Kubernetes
     kubernetes:
       envoyDeployment:
-        pod:
-          hostNetwork: true
-          nodeSelector:
-            node-role.kubernetes.io/control-plane: "true"
-          tolerations:
-            - key: node-role.kubernetes.io/control-plane
-              operator: Exists
-              effect: NoSchedule
         # This is the data-plane proxy handling live traffic, not the
         # controller (bounded separately in
         # gitops/platform/controllers/envoy-gateway/release.yaml) — a bit

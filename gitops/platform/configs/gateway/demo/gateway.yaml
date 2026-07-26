@@ -1,6 +1,11 @@
-# One shared Gateway per environment — Ghost's HTTPRoute attaches to this by
-# name (parentRefs), same shape as every environment (only the Docker-level
-# host port differs, per TLS.md; that's outside Kubernetes entirely).
+# One shared Gateway manifest — the hostname differs per environment
+# (ghost.test.local / ghost.acceptance.local / ghost.local), substituted by
+# Flux via ${GHOST_HOSTNAME} (set in each env's clusters/<env>/
+# configs-kustomization.yaml). Reached via vind's built-in per-Service
+# LoadBalancer/HAProxy container (examples/vcluster-docker/documentation/
+# LB.md) — each environment gets its own bridge IP, mapped locally in
+# /etc/hosts. Same port (443) everywhere — the hostname/IP is what
+# differentiates environments now, not the port.
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
@@ -14,7 +19,7 @@ spec:
     - name: https
       protocol: HTTPS
       port: 443
-      hostname: localhost
+      hostname: ${GHOST_HOSTNAME}
       tls:
         mode: Terminate
         certificateRefs:

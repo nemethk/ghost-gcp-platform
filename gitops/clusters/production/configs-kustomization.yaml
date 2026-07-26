@@ -16,3 +16,6 @@ spec:
     provider: sops
     secretRef:
       name: sops-age
+  postBuild:
+    substitute:
+      GHOST_HOSTNAME: ghost.local

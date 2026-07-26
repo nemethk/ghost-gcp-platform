@@ -36,13 +36,15 @@ controlPlane:
         cpu: 2
         memory: 2Gi
 
+# No experimental.docker.ports — Ghost is reached via vind's built-in
+# per-Service LoadBalancer/HAProxy container instead (LB.md), at
+# https://ghost.test.local, mapped to that container's own bridge IP in
+# /etc/hosts. Docker port-publishing would only reach the control-plane
+# container's raw network stack directly, which nothing binds to.
 experimental:
   docker:
     nodes:
       - name: worker-1
-    ports:
-      - "9080:80"
-      - "9443:443"
 
 sync:
   fromHost:

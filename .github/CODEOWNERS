@@ -1,0 +1,8 @@
+# Production's pinned-tag file — the only thing that gates a Production
+# deploy. Every other file needs just the baseline PR + 1 approval; this one
+# also needs review from whoever's listed here, once "Require review from
+# Code Owners" is enabled in branch protection settings.
+#
+# Added before the file itself exists — flux bootstrap generates it on
+# Production's first bootstrap; CODEOWNERS applies to it automatically.
+gitops/clusters/production/flux-system/gotk-sync.yaml   @nemethk

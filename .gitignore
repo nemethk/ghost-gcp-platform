@@ -1,2 +1,12 @@
+# Private key, decrypted by anyone who has it — never committed (SOPS.md).
 age.agekey
+# Project-local, isolated kubeconfig — for demo purpose only (infra/demo/Makefile).
 infra/demo/kubeconfig
+# Ad-hoc TLS material from browser-trust/mkcert work (TLS.md) — certs, and
+# especially private keys, never committed regardless of where they land.
+*.crt
+*.pem
+*.key
+# Ad-hoc debugging output (kubectl/flux/docker logs redirected to a file)
+# — never meant to be committed, easy to forget mid-troubleshooting.
+*.log

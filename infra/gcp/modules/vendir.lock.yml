@@ -1,0 +1,11 @@
+apiVersion: vendir.k14s.io/v1alpha1
+directories:
+- contents:
+  - git:
+      commitTitle: prep v57.0.0
+      sha: e70658563e38197eebc8e5399b7f0be828c4dab1
+      tags:
+      - v57.0.0
+    path: .
+  path: fabric
+kind: LockConfig

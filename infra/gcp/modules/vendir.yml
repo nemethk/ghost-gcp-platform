@@ -1,0 +1,30 @@
+apiVersion: vendir.k14s.io/v1alpha1
+kind: Config
+directories:
+  - path: fabric
+    contents:
+      - path: .
+        git:
+          url: https://github.com/GoogleCloudPlatform/cloud-foundation-fabric/
+          ref: v57.0.0
+        includePaths:
+          - LICENSE
+          # networking: VPC (psa.tf = Private Service Access, for Cloud SQL
+          # private connectivity), firewall rules, NAT for Autopilot nodes'
+          # egress.
+          - modules/net-vpc/**
+          - modules/net-vpc-firewall/**
+          - modules/net-cloudnat/**
+          # cloudsql
+          - modules/cloudsql-instance/**
+          # gke (Autopilot — no separate nodepool module needed)
+          - modules/gke-cluster-autopilot/**
+          # Workload Identity service accounts (Ghost pods -> Cloud SQL /
+          # Secret Manager)
+          - modules/iam-service-account/**
+          # adopts the two existing GCP projects (project_reuse) —
+          # stages/2-projects
+          - modules/project/**
+          # Terraform state + stage-links.sh outputs buckets — stages/0-bootstrap
+          - modules/gcs/**
+        newRootPath: .

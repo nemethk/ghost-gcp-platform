@@ -1,0 +1,468 @@
+# Google Cloud Storage Module
+
+<!-- BEGIN TOC -->
+- [Simple bucket example](#simple-bucket-example)
+- [Cloud KMS](#cloud-kms)
+  - [External keys](#external-keys)
+  - [KMS Autokey](#kms-autokey)
+- [Retention policy, soft delete policy and logging](#retention-policy-soft-delete-policy-and-logging)
+- [Lifecycle rule](#lifecycle-rule)
+- [GCS notifications](#gcs-notifications)
+- [Object upload](#object-upload)
+- [IP Filter](#ip-filter)
+- [IAM](#iam)
+- [Tag Bindings](#tag-bindings)
+- [Managed Folders](#managed-folders)
+- [Hierarchical Namespace](#hierarchical-namespace)
+- [Variables](#variables)
+- [Outputs](#outputs)
+<!-- END TOC -->
+
+## Simple bucket example
+
+```hcl
+module "bucket" {
+  source     = "./fabric/modules/gcs"
+  project_id = var.project_id
+  prefix     = var.prefix
+  name       = "my-bucket"
+  location   = "EU"
+  versioning = true
+  labels = {
+    cost-center = "devops"
+  }
+}
+# tftest modules=1 resources=1 inventory=simple.yaml e2e
+```
+
+## Cloud KMS
+
+### External keys
+
+```hcl
+module "project" {
+  source = "./fabric/modules/project"
+  name   = var.project_id
+  project_reuse = {
+    use_data_source = false
+    attributes = {
+      name             = var.project_id
+      number           = var.project_number
+      services_enabled = ["storage.googleapis.com"]
+    }
+  }
+}
+
+module "kms" {
+  source     = "./fabric/modules/kms"
+  project_id = var.project_id
+  keyring = {
+    location = "europe" # location of the KMS must match location of the bucket
+    name     = "${var.prefix}-test"
+  }
+  keys = {
+    bucket_key = {
+      iam_bindings = {
+        bucket_key_iam = {
+          members = [module.project.service_agents.storage.iam_email]
+          role    = "roles/cloudkms.cryptoKeyEncrypterDecrypter"
+        }
+      }
+    }
+  }
+}
+
+module "bucket" {
+  source         = "./fabric/modules/gcs"
+  project_id     = var.project_id
+  prefix         = var.prefix
+  name           = "my-bucket"
+  location       = "EU"
+  encryption_key = module.kms.keys.bucket_key.id
+}
+
+# tftest modules=2 e2e
+```
+
+### KMS Autokey
+
+For KMS Autokey to be used the [project needs to be enabled](https://docs.cloud.google.com/kms/docs/enable-autokey) and the principal running Terraform needs to have the `roles/cloudkms.autokeyUser` on the Autokey project.
+
+```hcl
+module "bucket" {
+  source     = "./fabric/modules/gcs"
+  project_id = "myproject"
+  prefix     = "test"
+  name       = "my-bucket"
+  location   = "europe-west8"
+  kms_autokeys = {
+    default = {}
+  }
+  encryption_key = "$kms_keys:autokeys/default"
+}
+# tftest modules=1 resources=2
+```
+
+## Retention policy, soft delete policy and logging
+
+```hcl
+module "bucket" {
+  source     = "./fabric/modules/gcs"
+  project_id = var.project_id
+  prefix     = var.prefix
+  name       = "my-bucket"
+  location   = "EU"
+  retention_policy = {
+    retention_period = 100
+    is_locked        = true
+  }
+  soft_delete_retention = 7776000
+  logging_config = {
+    log_bucket        = "log-bucket"
+    log_object_prefix = null
+  }
+}
+# tftest modules=1 resources=1 inventory=retention-logging.yaml
+```
+
+```hcl
+module "bucket" {
+  source     = "./fabric/modules/gcs"
+  project_id = var.project_id
+  prefix     = var.prefix
+  name       = "my-bucket"
+  location   = "EU"
+  retention_policy = {
+    retention_period = 100
+    is_locked        = true
+  }
+  soft_delete_retention = 7776000
+  context = {
+    storage_buckets = {
+      log-bucket = "log-bucket"
+    }
+  }
+  logging_config = {
+    log_bucket        = "$storage_buckets:log-bucket"
+    log_object_prefix = null
+  }
+}
+# tftest modules=1 inventory=retention-logging-context.yaml
+```
+
+## Lifecycle rule
+
+```hcl
+module "bucket" {
+  source     = "./fabric/modules/gcs"
+  project_id = var.project_id
+  prefix     = var.prefix
+  name       = "my-bucket"
+  location   = "EU"
+  lifecycle_rules = {
+    lr-0 = {
+      action = {
+        type          = "SetStorageClass"
+        storage_class = "STANDARD"
+      }
+      condition = {
+        age = 30
+      }
+    }
+  }
+}
+# tftest modules=1 resources=1 inventory=lifecycle.yaml e2e
+```
+
+## GCS notifications
+
+```hcl
+module "project" {
+  source = "./fabric/modules/project"
+  name   = var.project_id
+  project_reuse = {
+    use_data_source = false
+    attributes = {
+      name             = var.project_id
+      number           = var.project_number
+      services_enabled = ["storage.googleapis.com"]
+    }
+  }
+}
+
+module "bucket-gcs-notification" {
+  source     = "./fabric/modules/gcs"
+  project_id = var.project_id
+  prefix     = var.prefix
+  name       = "my-bucket"
+  location   = "EU"
+  notification_config = {
+    enabled        = true
+    payload_format = "JSON_API_V1"
+    sa_email       = module.project.service_agents.storage.email
+    topic_name     = "gcs-notification-topic"
+    event_types    = ["OBJECT_FINALIZE"]
+  }
+}
+# tftest e2e
+```
+
+## Object upload
+
+```hcl
+module "bucket" {
+  source     = "./fabric/modules/gcs"
+  project_id = var.project_id
+  prefix     = var.prefix
+  name       = "my-bucket"
+  location   = "EU"
+  objects_to_upload = {
+    sample-data = {
+      name         = "example-file.csv"
+      source       = "assets/example-file.csv"
+      content_type = "text/csv"
+    }
+  }
+}
+# tftest modules=1 resources=2 inventory=object-upload.yaml e2e
+```
+
+## IP Filter
+
+```hcl
+module "bucket" {
+  source     = "./fabric/modules/gcs"
+  project_id = var.project_id
+  prefix     = var.prefix
+  name       = "my-bucket"
+  location   = "EU"
+  ip_filter = {
+    allow_all_service_agent_access = false
+    allow_cross_org_vpcs           = false
+    public_network_sources = [
+      "8.8.8.8/32",
+      "8.8.4.4/32"
+    ]
+    vpc_network_sources = {
+      "projects/my-project-id/global/networks/my-vpc" = [
+        "10.0.0.0/8"
+      ]
+    }
+  }
+}
+# tftest modules=1 resources=1 inventory=ip-filter.yaml
+```
+
+## IAM
+
+IAM is managed via several variables that implement different features and levels of control:
+
+- `iam` and `iam_by_principals` configure authoritative bindings that manage individual roles exclusively, and are internally merged
+- `iam_bindings` configure authoritative bindings with optional support for conditions, and are not internally merged with the previous two variables
+- `iam_bindings_additive` configure additive bindings via individual role/member pairs with optional support  conditions
+
+The authoritative and additive approaches can be used together, provided different roles are managed by each. Some care must also be taken with the `iam_by_principals` variable to ensure that variable keys are static values, so that Terraform is able to compute the dependency graph.
+
+Refer to the [project module](../project/README.md#iam) for examples of the IAM interface. IAM also supports variable interpolation for both roles and principals and for the foreign resources where the service account is the principal, via the respective attributes in the `var.context` variable. Basic usage is shown in the example below.
+
+```hcl
+module "bucket" {
+  source     = "./fabric/modules/gcs"
+  project_id = var.project_id
+  prefix     = var.prefix
+  name       = "my-bucket"
+  location   = "EU"
+  context = {
+    iam_principals = {
+      mygroup = "group:${var.group_email}"
+    }
+  }
+  iam = {
+    "roles/storage.admin" = ["$iam_principals:mygroup"]
+  }
+}
+# tftest modules=1 resources=2 inventory=iam-authoritative.yaml e2e
+```
+
+```hcl
+module "bucket" {
+  source     = "./fabric/modules/gcs"
+  project_id = var.project_id
+  prefix     = var.prefix
+  name       = "my-bucket"
+  location   = "EU"
+  iam_bindings = {
+    storage-admin-with-delegated_roles = {
+      role    = "roles/storage.admin"
+      members = ["group:${var.group_email}"]
+      condition = {
+        title = "delegated-role-grants"
+        expression = format(
+          "api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', []).hasOnly([%s])",
+          join(",", formatlist("'%s'",
+            [
+              "roles/storage.objectAdmin",
+              "roles/storage.objectViewer",
+            ]
+          ))
+        )
+      }
+    }
+  }
+}
+# tftest modules=1 resources=2 inventory=iam-bindings.yaml e2e
+```
+
+```hcl
+module "bucket" {
+  source     = "./fabric/modules/gcs"
+  project_id = var.project_id
+  prefix     = var.prefix
+  name       = "my-bucket"
+  location   = "EU"
+  iam_bindings_additive = {
+    storage-admin-with-delegated_roles = {
+      role   = "roles/storage.admin"
+      member = "group:${var.group_email}"
+      condition = {
+        title = "delegated-role-grants"
+        expression = format(
+          "api.getAttribute('iam.googleapis.com/modifiedGrantsByRole', []).hasOnly([%s])",
+          join(",", formatlist("'%s'",
+            [
+              "roles/storage.objectAdmin",
+              "roles/storage.objectViewer",
+            ]
+          ))
+        )
+      }
+    }
+  }
+}
+# tftest modules=1 resources=2 inventory=iam-bindings-additive.yaml e2e
+```
+
+## Tag Bindings
+
+Refer to the [Creating and managing tags](https://cloud.google.com/resource-manager/docs/tags/tags-creating-and-managing) documentation for details on usage.
+
+```hcl
+module "org" {
+  source          = "./fabric/modules/organization"
+  organization_id = var.organization_id
+  tags = {
+    environment = {
+      description = "Environment specification."
+      values = {
+        dev     = {}
+        prod    = {}
+        sandbox = {}
+      }
+    }
+  }
+}
+
+module "bucket" {
+  source     = "./fabric/modules/gcs"
+  project_id = var.project_id
+  prefix     = var.prefix
+  name       = "my-bucket"
+  location   = "EU"
+  tag_bindings = {
+    env-sandbox = module.org.tag_values["environment/sandbox"].id
+  }
+}
+# tftest modules=2 resources=6
+```
+
+## Managed Folders
+
+```hcl
+module "bucket" {
+  source        = "./fabric/modules/gcs"
+  bucket_create = false
+  prefix        = var.prefix
+  name          = "my-bucket"
+  location      = "EU"
+  managed_folders = {
+    folder1 = {
+      iam = {
+        "roles/storage.admin" = ["user:user1@example.com"]
+      }
+    }
+    "folder1/subfolder" = {
+      force_destroy = true
+    }
+  }
+}
+# tftest inventory=managed-folders.yaml
+```
+
+## Hierarchical Namespace
+
+```hcl
+module "bucket" {
+  source                        = "./fabric/modules/gcs"
+  project_id                    = var.project_id
+  prefix                        = var.prefix
+  name                          = "my-bucket"
+  location                      = "EU"
+  enable_hierarchical_namespace = true
+  uniform_bucket_level_access   = true
+}
+# tftest inventory=hns.yaml
+```
+<!-- BEGIN TFDOC -->
+## Variables
+
+| name | description | type | required | default |
+|---|---|:---:|:---:|:---:|
+| [name](variables.tf#L228) | Bucket name suffix. | <code>string</code> | ✓ |  |
+| [autoclass](variables.tf#L17) | Enable autoclass to automatically transition objects to appropriate storage classes based on their access pattern. If set to true, storage_class must be set to STANDARD. Defaults to false. | <code>bool</code> |  | <code>null</code> |
+| [bucket_create](variables.tf#L23) | Create bucket. | <code>bool</code> |  | <code>true</code> |
+| [context](variables.tf#L30) | Context-specific interpolations. | <code>object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [cors](variables.tf#L50) | CORS configuration for the bucket. Defaults to null. | <code>object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>null</code> |
+| [custom_placement_config](variables.tf#L61) | The bucket's custom location configuration, which specifies the individual regions that comprise a dual-region bucket. If the bucket is designated as REGIONAL or MULTI_REGIONAL, the parameters are empty. | <code>list&#40;string&#41;</code> |  | <code>null</code> |
+| [default_event_based_hold](variables.tf#L67) | Enable event based hold to new objects added to specific bucket, defaults to false. | <code>bool</code> |  | <code>null</code> |
+| [enable_hierarchical_namespace](variables.tf#L73) | Enables hierarchical namespace. | <code>bool</code> |  | <code>null</code> |
+| [enable_object_retention](variables.tf#L79) | Enables object retention on a storage bucket. | <code>bool</code> |  | <code>null</code> |
+| [encryption_key](variables.tf#L85) | KMS key that will be used for encryption. | <code>string</code> |  | <code>null</code> |
+| [force_destroy](variables.tf#L91) | Optional map to set force destroy keyed by name, defaults to false. | <code>bool</code> |  | <code>false</code> |
+| [iam](variables-iam.tf#L17) | IAM bindings in {ROLE => [MEMBERS]} format. | <code>map&#40;list&#40;string&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [iam_bindings](variables-iam.tf#L23) | Authoritative IAM bindings in {KEY => {role = ROLE, members = [], condition = {}}}. Keys are arbitrary. | <code>map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [iam_bindings_additive](variables-iam.tf#L38) | Individual additive IAM bindings. Keys are arbitrary. | <code>map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [iam_by_principals](variables-iam.tf#L53) | Authoritative IAM binding in {PRINCIPAL => [ROLES]} format. Principals need to be statically defined to avoid cycle errors. Merged internally with the `iam` variable. | <code>map&#40;list&#40;string&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [ip_filter](variables.tf#L97) | The bucket's IP filter configuration. | <code>object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>null</code> |
+| [kms_autokeys](variables.tf#L108) | KMS Autokey key handles. If location is not specified the bucket location will be used. Key handle names will be added to the kms_keys context with an `autokeys/` prefix. | <code>map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [labels](variables.tf#L126) | Labels to be attached to all buckets. | <code>map&#40;string&#41;</code> |  | <code>&#123;&#125;</code> |
+| [lifecycle_rules](variables.tf#L132) | Bucket lifecycle rule. | <code>map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [location](variables.tf#L181) | Bucket location. | <code>string</code> |  | <code>null</code> |
+| [logging_config](variables.tf#L191) | Bucket logging configuration. | <code>object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>null</code> |
+| [managed_folders](variables.tf#L200) | Managed folders to create within the bucket in {PATH => CONFIG} format. | <code>map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [notification_config](variables.tf#L233) | GCS Notification configuration. | <code>object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>null</code> |
+| [objects_to_upload](variables.tf#L251) | Objects to be uploaded to bucket. | <code>map&#40;object&#40;&#123;&#8230;&#125;&#41;&#41;</code> |  | <code>&#123;&#125;</code> |
+| [prefix](variables.tf#L277) | Optional prefix used to generate the bucket name. | <code>string</code> |  | <code>null</code> |
+| [project_id](variables.tf#L287) | Bucket project id. Only required when creating buckets, or notification config topics. | <code>string</code> |  | <code>null</code> |
+| [public_access_prevention](variables.tf#L306) | Prevents public access to the bucket. | <code>string</code> |  | <code>null</code> |
+| [requester_pays](variables.tf#L316) | Enables Requester Pays on a storage bucket. | <code>bool</code> |  | <code>null</code> |
+| [retention_policy](variables.tf#L322) | Bucket retention policy. | <code>object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>null</code> |
+| [rpo](variables.tf#L331) | Bucket recovery point objective. | <code>string</code> |  | <code>null</code> |
+| [soft_delete_retention](variables.tf#L341) | The duration in seconds that soft-deleted objects in the bucket will be retained and cannot be permanently deleted. Set to 0 to override the default and disable. | <code>number</code> |  | <code>null</code> |
+| [storage_class](variables.tf#L347) | Bucket storage class. | <code>string</code> |  | <code>&#34;STANDARD&#34;</code> |
+| [tag_bindings](variables.tf#L357) | Tag bindings for this folder, in key => tag value id format. | <code>map&#40;string&#41;</code> |  | <code>&#123;&#125;</code> |
+| [uniform_bucket_level_access](variables.tf#L364) | Allow using object ACLs (false) or not (true, this is the recommended behavior) , defaults to true (which is the recommended practice, but not the behavior of storage API). | <code>bool</code> |  | <code>true</code> |
+| [versioning](variables.tf#L370) | Enable versioning, defaults to false. | <code>bool</code> |  | <code>null</code> |
+| [website](variables.tf#L376) | Bucket website. | <code>object&#40;&#123;&#8230;&#125;&#41;</code> |  | <code>null</code> |
+
+## Outputs
+
+| name | description | sensitive |
+|---|---|:---:|
+| [bucket](outputs.tf#L17) | Bucket resource. |  |
+| [id](outputs.tf#L28) | Fully qualified bucket id. |  |
+| [name](outputs.tf#L39) | Bucket name. |  |
+| [notification](outputs.tf#L50) | GCS Notification self link. |  |
+| [objects](outputs.tf#L55) | Objects in GCS bucket. |  |
+| [topic](outputs.tf#L67) | Topic ID used by GCS. |  |
+| [url](outputs.tf#L72) | Bucket URL. |  |
+<!-- END TFDOC -->

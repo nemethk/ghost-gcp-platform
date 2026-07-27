@@ -10,3 +10,11 @@ infra/demo/kubeconfig
 # Ad-hoc debugging output (kubectl/flux/docker logs redirected to a file)
 # — never meant to be committed, easy to forget mid-troubleshooting.
 *.log
+# Terraform local state/plugin cache/plan output (infra/gcp) — state lives in
+# GCS backends, never locally; .terraform.lock.hcl IS committed (it's not
+# matched by this) since it pins provider versions per root.
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log

@@ -16,6 +16,7 @@ spec:
       labels:
         {{- include "ghost.selectorLabels" . | nindent 8 }}
     spec:
+      serviceAccountName: {{ include "ghost.fullname" . }}
       containers:
         - name: ghost
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -44,10 +45,23 @@ spec:
                 secretKeyRef:
                   name: {{ required "ghost.database.existingSecret is required" .Values.ghost.database.existingSecret }}
                   key: {{ .Values.ghost.database.passwordKey }}
-          {{- if .Values.persistence.enabled }}
+          {{- if or .Values.persistence.enabled .Values.ghost.database.secretProviderClass }}
           volumeMounts:
+            {{- if .Values.persistence.enabled }}
             - name: content
               mountPath: /var/lib/ghost/content
+            {{- end }}
+            {{- if .Values.ghost.database.secretProviderClass }}
+            # Not read directly — Ghost gets the password via the normal
+            # database__connection__password env var above, from a
+            # Kubernetes Secret. This mount exists only to trigger the CSI
+            # driver's "sync as Kubernetes Secret" behavior (secretObjects
+            # in the SecretProviderClass), which requires an actual mount
+            # to run at least once.
+            - name: db-secrets
+              mountPath: /mnt/secrets-store
+              readOnly: true
+            {{- end }}
           {{- end }}
           # httpHeaders: Ghost's `url` is https, so it redirects any request it
           # doesn't consider already-secure. Real traffic goes through Envoy
@@ -75,9 +89,19 @@ spec:
             periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-      {{- if .Values.persistence.enabled }}
+      {{- if or .Values.persistence.enabled .Values.ghost.database.secretProviderClass }}
       volumes:
+        {{- if .Values.persistence.enabled }}
         - name: content
           persistentVolumeClaim:
             claimName: {{ include "ghost.fullname" . }}-content
+        {{- end }}
+        {{- if .Values.ghost.database.secretProviderClass }}
+        - name: db-secrets
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Values.ghost.database.secretProviderClass }}
+        {{- end }}
       {{- end }}

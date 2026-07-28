@@ -1,15 +1,30 @@
-# replicas is deliberately fixed at 1: Ghost has no shared cache/session store
-# and no coordination between scheduled jobs, so multiple replicas produce
-# duplicate scheduled emails/posts, not extra capacity. There is no HPA in this
-# chart for the same reason — autoscaling replicas would actively cause that
-# bug class. Availability comes from Kubernetes' own fast rescheduling on
-# failure, not from redundant replicas. See docs/architecture.md.
+# replicas is deliberately fixed at 1 — not a limitation of this chart, a
+# constraint of Ghost itself. Ghost's own docs: "Ghost doesn't support
+# load-balanced clustering or multi-server setups of any description, there
+# should only be one Ghost instance per site"
+# (https://docs.ghost.org/faq/clustering-sharding-multi-server/). Running
+# multiple instances causes real failures there (405s, instances needing
+# constant restarts), not just the duplicate scheduled-post/email risk this
+# repo would otherwise expect from Ghost's in-process scheduler having no
+# cross-instance coordination. There is no HPA in this chart for the same
+# reason. Availability comes from Kubernetes' own fast rescheduling on
+# failure, not from redundant replicas; real capacity comes from vertical
+# `resources` (see apps/gke/<env>/ghost-values.yaml) and, per Ghost's own
+# recommended scale/HA path, a cache/CDN layer in front — see
+# docs/architecture.md.
 replicaCount: 1
 
 image:
   repository: ghost
   tag: "6.39.0"
   pullPolicy: IfNotPresent
+
+serviceAccount:
+  # Empty on the demo track (no annotation rendered at all — see
+  # templates/serviceaccount.yaml). Real GKE sets this to the GCP service
+  # account email Workload Identity binds Ghost's pods to, for Cloud
+  # SQL/Secret Manager access with no key file mounted into the pod.
+  gcpServiceAccountEmail: ""
 
 # Recreate, not RollingUpdate: the content PVC is mounted by a single pod at a
 # time. A rolling update would try to start the new pod (and mount the volume)
@@ -55,11 +70,17 @@ ghost:
     name: ghost
     user: ghost
     # Name of a pre-existing Secret holding the password — created out of
-    # band (SOPS-decrypted overlay resource on real GKE; a Makefile-generated,
-    # never-committed Secret for the local demo). This chart never creates or
-    # contains the secret itself.
+    # band (a Makefile-generated, never-committed Secret for the local
+    # demo; on real GKE, synced from Secret Manager by the Secrets Store
+    # CSI driver — see secretProviderClass below). This chart never creates
+    # or contains the secret itself.
     existingSecret: ""
     passwordKey: database-password
+    # Name of a SecretProviderClass (apps/gke/<env>/secret-provider-class.yaml)
+    # whose secretObjects sync target is existingSecret above. Empty on the
+    # demo track — no CSI volume is mounted at all when unset (see
+    # templates/deployment.yaml).
+    secretProviderClass: ""
 
 resources:
   requests:

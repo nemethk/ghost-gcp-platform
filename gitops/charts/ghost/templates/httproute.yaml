@@ -20,8 +20,8 @@ spec:
           responseHeaderModifier:
             set:
               # Derived from Chart.yaml's own version, not a separate values
-              # field — nothing to forget to keep in sync. BRANCH.md already
-              # requires Chart.yaml's version to track the git tag, so this
+              # field — nothing to forget to keep in sync. Chart.yaml's
+              # version already tracks the git tag by convention, so this
               # is a direct, automatic reflection of that, not a second
               # manually-maintained value.
               - name: X-Chart-Version

@@ -32,7 +32,7 @@ data:
           "type": "stat",
           "title": "Pod Ready",
           "datasource": "Prometheus",
-          "gridPos": { "h": 4, "w": 6, "x": 0, "y": 0 },
+          "gridPos": { "h": 4, "w": 12, "x": 0, "y": 0 },
           "targets": [
             {
               "expr": "sum(kube_pod_status_phase{namespace=\"ghost\", phase=\"Running\"})",
@@ -58,7 +58,7 @@ data:
           "type": "stat",
           "title": "Pod Restarts (1h)",
           "datasource": "Prometheus",
-          "gridPos": { "h": 4, "w": 6, "x": 6, "y": 0 },
+          "gridPos": { "h": 4, "w": 12, "x": 12, "y": 0 },
           "targets": [
             {
               "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"ghost\", container=\"ghost\"}[1h]))",

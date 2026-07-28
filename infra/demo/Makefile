@@ -33,7 +33,7 @@ up-%: cluster-%
 	flux bootstrap github \
 		--owner=$(GITHUB_OWNER) --repository=$(GITHUB_REPO) --personal \
 		--private=false --reconcile \
-		--path=gitops/clusters/$* --branch=main --context=$$ctx || exit 1; \
+		--path=gitops/clusters/demo/$* --branch=main --context=$$ctx || exit 1; \
 	echo "==> $*: waiting for the ghost namespace (gitops/namespaces/) — bootstrap only forces the root sync, not this downstream Kustomization"; \
 	flux reconcile kustomization namespaces --context $$ctx --namespace flux-system --with-source || exit 1; \
 	echo "==> $*: sops-age decryption secret (local key, not committed)"; \

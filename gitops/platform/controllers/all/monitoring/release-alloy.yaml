@@ -85,12 +85,12 @@ spec:
 
           loki.write "default" {
             endpoint {
-              # Flux's helm-controller prefixes the Helm release name with
-              # targetNamespace when releaseName isn't set explicitly
-              # (release-loki.yaml's HelmRelease is named "loki", targetNamespace
-              # is "monitoring" — the resulting Service is monitoring-loki, not
-              # loki). Confirmed live: logs never reached Loki until this matched
-              # the real Service name.
+              // Flux's helm-controller prefixes the Helm release name with
+              // targetNamespace when releaseName isn't set explicitly
+              // (release-loki.yaml's HelmRelease is named "loki", targetNamespace
+              // is "monitoring" — the resulting Service is monitoring-loki, not
+              // loki). Confirmed live: logs never reached Loki until this matched
+              // the real Service name.
               url = "http://monitoring-loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
             }
           }

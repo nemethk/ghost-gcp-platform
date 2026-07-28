@@ -1,8 +1,11 @@
-# Production's pinned-tag file — the only thing that gates a Production
-# deploy. Every other file needs just the baseline PR + 1 approval; this one
-# also needs review from whoever's listed here, once "Require review from
+# Production's pinned-tag files — the only thing that gates a Production
+# deploy. Every other file needs just the baseline PR + 1 approval; these
+# also need review from whoever's listed here, once "Require review from
 # Code Owners" is enabled in branch protection settings.
 #
-# Added before the file itself exists — flux bootstrap generates it on
-# Production's first bootstrap; CODEOWNERS applies to it automatically.
-gitops/clusters/production/flux-system/gotk-sync.yaml   @nemethk
+# Two tracks, both gated: the demo track (flux bootstrap-generated, local
+# vcluster) and the real-GKE track (committed directly — infra/gcp's
+# flux-bootstrap module seeds it once, then steps aside; see that file's
+# own comment for why).
+gitops/clusters/demo/production/flux-system/gotk-sync.yaml   @nemethk
+gitops/clusters/gke/production/flux-system/gotk-sync.yaml    @nemethk

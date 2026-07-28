@@ -5,11 +5,9 @@
 # was unverified (sync.fromHost.nodes.enabled: false in
 # infra/demo/vclusters/test.yaml). API-based collection goes through
 # vCluster's own proxy layer, the same path kubectl logs already relies on,
-# so it doesn't carry that risk. Pattern adapted from examples/monitoring
-# (internal/components/alloy/deploy.go) — no namespace allow-list filter
-# added, since that example's is scoped to a specific multi-tenant label
-# convention that doesn't apply here; the dashboard's Logs panel already
-# filters to namespace="ghost" at query time instead.
+# so it doesn't carry that risk. No namespace allow-list filter added —
+# the dashboard's Logs panel already filters to namespace="ghost" at query
+# time instead.
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:

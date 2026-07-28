@@ -24,9 +24,9 @@ cluster-%:
 	@vcluster create $* --driver docker --values vclusters/$*.yaml --upgrade
 
 # Full flow for a single environment — e.g. `make up-test` to verify Flux on
-# one cluster before rolling out to all three (the bring-up-Test-first gate
-# in IMPLEMENTATION_PLAN.md §1.5). `up` itself is just this, applied to every
-# environment — same recipe either way, nothing duplicated between the two.
+# one cluster before rolling out to all three. `up` itself is just this,
+# applied to every environment — same recipe either way, nothing duplicated
+# between the two.
 up-%: cluster-%
 	@ctx=vcluster-docker_$*; \
 	echo "==> $*: flux bootstrap (ingress-nginx, cert-manager, and the ClusterIssuer are Flux-managed from here — see gitops/platform/controllers/ and gitops/platform/configs/cert-manager/demo/)"; \
@@ -69,8 +69,8 @@ down: $(addprefix down-,$(ENVS))
 
 # Fast iteration: stops/starts the underlying Docker containers in seconds,
 # without losing cluster state — use this instead of down/up between test
-# runs (TLS.md). e.g. `make pause-acceptance` to free up resources for one
-# cluster without touching the other two.
+# runs. e.g. `make pause-acceptance` to free up resources for one cluster
+# without touching the other two.
 pause-%:
 	@vcluster pause $* --driver docker
 

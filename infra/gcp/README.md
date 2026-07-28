@@ -30,10 +30,11 @@ infra/gcp/
     ├── 2-projects/              # adopts the two existing GCP projects (nonprod,
     │                            #   production) — project_reuse, no
     │                            #   folder hierarchy, no project creation
-    ├── 3-networking/            # both VPCs
+    ├── 3-networking/            # both VPCs + one reserved external IP per environment
     ├── 4-gke-nonprod/           # shared GKE Autopilot cluster (Test + Acceptance)
     ├── 4-gke-production/        # dedicated GKE Autopilot cluster
-    ├── 5-databases/             # Cloud SQL: test, acceptance, production
+    ├── 5-databases/             # Cloud SQL + Ghost's per-environment GSA
+    │                            #   (Workload Identity, scoped Secret Manager access)
     ├── 6-vcluster/              # vcluster Helm installs onto 4-gke-nonprod
     └── 7-flux-bootstrap/        # flux2 into vcluster-test/-acceptance and
                                   #   directly into 4-gke-production

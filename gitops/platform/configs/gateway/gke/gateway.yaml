@@ -1,0 +1,43 @@
+# Same shared-Gateway shape as the demo track — one Gateway, hostname
+# substituted per environment via ${GHOST_HOSTNAME} (set in each env's
+# clusters/gke/<env>/configs-kustomization.yaml). Two differences from
+# demo's: the cert-manager issuer is Let's Encrypt instead of SelfSigned,
+# and there's a plain HTTP listener — HTTP-01 challenges are served over
+# port 80 before any certificate exists, so the Gateway needs somewhere for
+# cert-manager's temporary challenge HTTPRoute to attach.
+#
+# spec.addresses pins the Envoy proxy's LoadBalancer Service to a
+# Terraform-reserved static IP (infra/gcp/stages/3-networking's
+# google_compute_address.ghost_lb, substituted here as ${GKE_STATIC_IP}) —
+# the standard Gateway API mechanism, confirmed against Envoy Gateway's own
+# docs (gateway.envoyproxy.io/docs/tasks/traffic/gateway-address) rather
+# than assumed. Without this the Service gets GCP's default ephemeral IP,
+# which is stable across routine changes but not guaranteed to survive the
+# Service/Gateway being deleted and recreated — exactly the thing a
+# manually-managed GoDaddy A record can't tolerate.
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: ghost
+  namespace: ghost
+  annotations:
+    cert-manager.io/cluster-issuer: ghost-letsencrypt
+spec:
+  gatewayClassName: envoy-gateway
+  addresses:
+    - type: IPAddress
+      value: ${GKE_STATIC_IP}
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: ${GHOST_HOSTNAME}
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: ${GHOST_HOSTNAME}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: ghost-tls

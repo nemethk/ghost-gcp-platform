@@ -1,0 +1,40 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ghost
+spec:
+  values:
+    persistence:
+      storageClassName: ghost-filestore-rwx
+      accessMode: ReadWriteMany
+    # replicaCount stays 1 (chart default) — Ghost's internal scheduler
+    # isn't safe to run on more than one replica at once (see values.yaml's
+    # own comment). Real GKE's "scale up" is vertical: more headroom than
+    # the demo track's laptop-constrained defaults (100m/256Mi request,
+    # 500m/512Mi limit), not more replicas.
+    resources:
+      requests:
+        cpu: 250m
+        memory: 384Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+    ghost:
+      url: "https://ghost.test.example.com"
+      database:
+        # Placeholder — the real private IP is only known once
+        # infra/gcp/stages/5-databases has actually been applied
+        # (module.instance["test"].private_ip_address).
+        host: CLOUD_SQL_PRIVATE_IP_PLACEHOLDER
+        existingSecret: ghost-db-credentials
+        secretProviderClass: ghost-db-secrets
+    httpRoute:
+      hostname: ghost.test.example.com
+    serviceAccount:
+      # Placeholder — real value is infra/gcp/stages/5-databases's
+      # ghost_gsa_emails["test"] output, once that stage has actually been
+      # applied. Workload Identity binding assumes the Kubernetes
+      # ServiceAccount is named "ghost-ghost" in the "ghost" namespace
+      # (5-databases's var.ghost_ksa_name) — not confirmed against a live
+      # cluster, verify before relying on it.
+      gcpServiceAccountEmail: ghost-test@GCP_PROJECT_ID_PLACEHOLDER.iam.gserviceaccount.com

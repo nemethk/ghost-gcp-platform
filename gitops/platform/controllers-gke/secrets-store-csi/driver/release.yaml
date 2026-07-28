@@ -1,0 +1,30 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: secrets-store-csi-driver
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: secrets-store-csi-driver
+      sourceRef:
+        kind: HelmRepository
+        name: secrets-store-csi-driver
+  # Conventional default namespace for this driver — not one of
+  # gitops/namespaces/'s (kube-system already exists on every cluster).
+  targetNamespace: kube-system
+  values:
+    # Required for the "mount once, then also get a plain Kubernetes Secret"
+    # pattern apps/gke/<env>/secret-provider-class.yaml relies on — Ghost's
+    # Deployment still reads the DB password via a normal secretKeyRef, not
+    # by reading the CSI-mounted file directly.
+    syncSecret:
+      enabled: true
+    enableSecretRotation: true
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi

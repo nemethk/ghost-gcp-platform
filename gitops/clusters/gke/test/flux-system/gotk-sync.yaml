@@ -1,0 +1,30 @@
+# Committed, not Terraform-managed after the first apply — this is the
+# actual source of truth Flux reconciles itself from going forward.
+# infra/gcp/modules/custom/flux-bootstrap creates a matching object once,
+# to bootstrap Flux before it can reconcile anything (including this file)
+# from git at all, then steps out of the way (lifecycle.ignore_changes) so
+# edits here — not a Terraform apply — are what drives promotion, same as
+# the demo track's flux-bootstrap-generated equivalent.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  ref:
+    branch: main
+  url: https://github.com/nemethk/ghost-gcp-platform
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./gitops/clusters/gke/test
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

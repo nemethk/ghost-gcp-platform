@@ -1,0 +1,27 @@
+# RWX for Ghost's content volume — needed to scale replicaCount beyond 1 on
+# real GKE (standard GKE persistent disks are RWO-only). GKE Autopilot has
+# the Filestore CSI driver available by default, no addon toggle needed —
+# confirmed against the vendored fabric gke-cluster-autopilot module, which
+# doesn't even expose one (Autopilot-only default, not a Standard-cluster
+# opt-in). Dynamic provisioning: no separate Terraform Filestore resource —
+# GKE creates the Filestore instance on demand, the first time a PVC
+# requests this class.
+#
+# "standard" tier = Filestore's Basic HDD — the cheapest, simplest tier.
+# Bump to "premium" (Basic SSD) if Ghost's content volume ever needs more
+# than HDD-class throughput.
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ghost-filestore-rwx
+provisioner: filestore.csi.storage.gke.io
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+parameters:
+  tier: standard
+  # Substituted per cluster by each gke/<env>/configs-kustomization.yaml
+  # (same mechanism as ${GHOST_HOSTNAME}) — nonprod's VPC differs from
+  # production's, so this can't be one static value shared across all
+  # three environments the way this file otherwise is.
+  network: ${GKE_VPC_NAME}

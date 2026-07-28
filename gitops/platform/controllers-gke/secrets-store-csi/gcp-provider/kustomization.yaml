@@ -1,0 +1,10 @@
+# Deliberately no `namespace:` here — this manifest hardcodes kube-system
+# for its own ServiceAccount/DaemonSet, matching the driver above (both must
+# run in the same namespace). Kustomize's namespace transformer overrides
+# even an already-set namespace field, not just unset ones, so nothing in
+# this file's ancestry may set namespace: blanket-wide either — confirmed
+# with a real `kubectl kustomize` build before settling on this split.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - https://raw.githubusercontent.com/GoogleCloudPlatform/secrets-store-csi-driver-provider-gcp/main/deploy/provider-gcp-plugin.yaml

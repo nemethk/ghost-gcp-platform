@@ -1,0 +1,31 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: configs
+  namespace: flux-system
+spec:
+  interval: 5m
+  path: ./gitops/platform/configs-gke
+  prune: true
+  dependsOn:
+    - name: controllers
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  decryption:
+    provider: sops
+    secretRef:
+      name: sops-age
+  postBuild:
+    substitute:
+      # Placeholder — the real domain is managed at GoDaddy, not decided in
+      # code. Replace before this stage is ever synced for real.
+      GHOST_HOSTNAME: ghost.test.example.com
+      # Real, deterministic value — infra/gcp/stages/3-networking/main.tf
+      # names the nonprod VPC "ghost-nonprod" literally, not a Terraform
+      # output that varies at apply time.
+      GKE_VPC_NAME: ghost-nonprod
+      # Placeholder — the real value is infra/gcp/stages/3-networking's
+      # ghost_lb_ips["test"] output (a GCP-assigned address, only known
+      # once that stage has actually been applied).
+      GKE_STATIC_IP: 0.0.0.0

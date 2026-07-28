@@ -1,5 +1,8 @@
+# namespace stamped here, not left to the parent — see cert-manager/
+# kustomization.yaml's comment for why.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: flux-system
 resources:
   - repository.yaml
   - release.yaml

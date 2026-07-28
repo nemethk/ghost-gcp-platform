@@ -1,5 +1,12 @@
+# namespace stamped here (not left to the parent controllers/ selector) so
+# this sub-kustomization is self-sufficient regardless of which parent
+# includes it — platform/controllers/ (demo+gke shared) or a future
+# gke-only tree that can't blanket-stamp a namespace without also
+# corrupting resources that hardcode their own (see controllers-gke/
+# secrets-store-csi/gcp-provider/).
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: flux-system
 resources:
   - repository.yaml
   - release.yaml

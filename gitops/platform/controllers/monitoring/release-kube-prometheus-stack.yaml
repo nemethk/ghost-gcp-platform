@@ -1,13 +1,17 @@
-# Test-only (see gitops/clusters/test/monitoring-kustomization.yaml) — laptop
-# resource budget (7 threads/16GB, shared across 3 vClusters) doesn't fit the
-# full stack running 3x simultaneously. Same manifests would apply unchanged
-# to Acceptance/Production on real GKE, where node capacity isn't a laptop
-# constraint — this is a scope decision, not a technical limitation.
+# Demo track: Test-only (see gitops/clusters/demo/test/monitoring-kustomization.yaml)
+# — laptop resource budget (7 threads/16GB, shared across 3 vClusters)
+# doesn't fit the full stack running 3x simultaneously. Real GKE has no such
+# constraint, so these same manifests run unchanged on all three real
+# environments (gitops/platform/controllers-gke/kustomization.yaml) — the
+# Test-only restriction was always a demo-track scope decision, not a
+# technical limitation of the manifests themselves.
 #
-# kubeControllerManager/kubeScheduler/kubeEtcd/kubeProxy monitors are disabled:
-# they scrape a real kubeadm control plane's static pods, which don't exist
-# the same way inside a vCluster's virtual API server — they'd just be
-# permanently-failing targets, not real signal.
+# kubeControllerManager/kubeScheduler/kubeEtcd/kubeProxy monitors are disabled
+# everywhere, demo and real GKE alike: they scrape a real kubeadm control
+# plane's static pods. Demo's vClusters don't expose one (virtual API server);
+# real GKE's control plane is Google-managed and not scrapeable from inside
+# the cluster either — in both cases these would just be permanently-failing
+# targets, not real signal.
 #
 # All resources set explicitly below — the chart's own defaults for several
 # components are effectively unbounded, which isn't safe on a shared laptop.

@@ -1,0 +1,14 @@
+# parametersRef points at envoy-proxy.yaml's EnvoyProxy — the node
+# pinning/toleration that makes the demo-track proxy pod reachable at the
+# Docker-published host port (see envoy-proxy.yaml for why).
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: envoy-gateway
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: envoy-gateway-config
+    namespace: envoy-gateway-system

@@ -1,0 +1,14 @@
+# gke's counterpart to platform/configs/kustomization.yaml — Kustomize
+# can't conditionally pick subfolders per cluster, so real GKE needs its own
+# top-level selector rather than a flag inside the shared one. alerts is
+# genuinely shared (Slack webhook wiring, nothing GCP-specific); the next
+# two point at the gke/ sibling of what demo's selector uses. storage/ has
+# no demo counterpart at all (local vCluster PVCs just use the cluster
+# default), so it lives directly here rather than under a {demo,gke} split.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../configs/alerts
+  - ../configs/cert-manager/gke
+  - ../configs/gateway/gke
+  - storage

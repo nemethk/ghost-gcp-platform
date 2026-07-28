@@ -1,0 +1,7 @@
+# No gotk-components.yaml, unlike demo's — Flux's controllers are installed
+# by infra/gcp/modules/custom/flux-bootstrap's helm_release, not raw
+# manifests committed to git.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - gotk-sync.yaml

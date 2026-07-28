@@ -1,0 +1,29 @@
+# Let's Encrypt via HTTP-01 — DNS is managed at GoDaddy, not delegated to a
+# GCP-hosted zone, so DNS-01 isn't an option here. The HTTP-01 challenge is
+# solved through the same Gateway Ghost's traffic uses (gateway.yaml's HTTP
+# listener), via cert-manager's Gateway API integration (gateway-shim,
+# enabled through values.config.enableGatewayAPI on the HelmRelease) — no
+# separate Certificate resource needed, same as the demo SelfSigned setup.
+#
+# In its own Kustomization (platform/configs-gke/, not bundled with
+# platform/controllers/) so it can dependsOn cert-manager's CRDs actually
+# existing first.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: ghost-letsencrypt
+spec:
+  acme:
+    # Placeholder — a real contact address belongs here before this is ever
+    # applied for real.
+    email: letsencrypt-admin@example.com
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      name: ghost-letsencrypt-account-key
+    solvers:
+      - http01:
+          gatewayHTTPRoute:
+            parentRefs:
+              - name: ghost
+                namespace: ghost
+                kind: Gateway

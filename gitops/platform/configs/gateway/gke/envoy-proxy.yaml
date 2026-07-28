@@ -1,0 +1,24 @@
+# Same shape as demo's — bounds the data-plane proxy's resources, no
+# node-pinning needed (real GKE has no laptop resource budget to work
+# around at all). Kept as its own per-flavor copy rather than shared with
+# demo's: these limits were sized for a laptop's constrained 7-thread/16GB
+# budget shared across three vClusters, and real GKE traffic will likely
+# want more headroom — tune independently of demo's, not coupled to it.
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: envoy-gateway-config
+  namespace: envoy-gateway-system
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        container:
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi

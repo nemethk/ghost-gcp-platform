@@ -1,0 +1,27 @@
+# See test/flux-system/gotk-sync.yaml for the full explanation of why this
+# is committed rather than Terraform-managed. ref differs from Test's —
+# tracks the newest git tag instead of main's HEAD, matching the demo
+# track's promotion-gate design.
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: GitRepository
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 1m0s
+  ref:
+    semver: ">=0.0.0"
+  url: https://github.com/nemethk/ghost-gcp-platform
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: flux-system
+  namespace: flux-system
+spec:
+  interval: 10m0s
+  path: ./gitops/clusters/gke/acceptance
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

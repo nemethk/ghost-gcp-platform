@@ -25,6 +25,17 @@ resource "kubernetes_secret" "sops_age" {
   depends_on = [helm_release.flux2]
 }
 
+# Bootstrap seed only, not the ongoing source of truth: the real ref lives
+# in the committed gitops/clusters/gke/<env>/flux-system/gotk-sync.yaml
+# (branch for Test, semver for Acceptance, a pinned tag for Production —
+# the same promotion-gate design as the demo track). Flux picks that file
+# up on its own first successful reconcile of ./gitops/clusters/gke/<env>
+# (which this Kustomization's own path already covers, since flux-system/
+# is a subdirectory of it) and self-manages from git after that — the same
+# self-referential pattern `flux bootstrap` uses for the demo track.
+# ignore_changes stops this resource from fighting that: without it, every
+# `terraform apply` would revert whatever ref a merged PR just promoted
+# Production to, back to whatever's hardcoded below.
 resource "kubectl_manifest" "git_repository" {
   yaml_body = yamlencode({
     apiVersion = "source.toolkit.fluxcd.io/v1"
@@ -40,6 +51,10 @@ resource "kubectl_manifest" "git_repository" {
     }
   })
   depends_on = [helm_release.flux2]
+
+  lifecycle {
+    ignore_changes = [yaml_body]
+  }
 }
 
 resource "kubectl_manifest" "kustomization" {
@@ -52,7 +67,7 @@ resource "kubectl_manifest" "kustomization" {
     }
     spec = {
       interval = "10m0s"
-      path     = "./gitops/clusters/${var.environment}"
+      path     = "./gitops/clusters/gke/${var.environment}"
       prune    = true
       sourceRef = {
         kind = "GitRepository"
@@ -61,4 +76,8 @@ resource "kubectl_manifest" "kustomization" {
     }
   })
   depends_on = [kubectl_manifest.git_repository, kubernetes_secret.sops_age]
+
+  lifecycle {
+    ignore_changes = [yaml_body]
+  }
 }

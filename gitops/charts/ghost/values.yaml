@@ -36,7 +36,7 @@ service:
   port: 2368
 
 # TLS termination happens on the shared, platform-owned Gateway (see
-# gitops/platform/configs/gateway/), not per-app — the chart only needs to
+# gitops/platform/configs/all/gateway/), not per-app — the chart only needs to
 # know which Gateway to attach to and which hostname to match.
 #
 # hostname is a real field, not a demo-only workaround: Gateway API's

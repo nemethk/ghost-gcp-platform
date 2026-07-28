@@ -18,7 +18,7 @@ spec:
       envoyDeployment:
         # This is the data-plane proxy handling live traffic, not the
         # controller (bounded separately in
-        # gitops/platform/controllers/envoy-gateway/release.yaml) — a bit
+        # gitops/platform/controllers/all/envoy-gateway/release.yaml) — a bit
         # more headroom than the controller gets.
         container:
           resources:

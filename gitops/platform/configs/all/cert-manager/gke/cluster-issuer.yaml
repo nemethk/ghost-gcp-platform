@@ -5,7 +5,7 @@
 # enabled through values.config.enableGatewayAPI on the HelmRelease) — no
 # separate Certificate resource needed, same as the demo SelfSigned setup.
 #
-# In its own Kustomization (platform/configs-gke/, not bundled with
+# In its own Kustomization (platform/configs/gke/, not bundled with
 # platform/controllers/) so it can dependsOn cert-manager's CRDs actually
 # existing first.
 apiVersion: cert-manager.io/v1

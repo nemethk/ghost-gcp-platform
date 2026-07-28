@@ -1,7 +1,7 @@
 # Picked up automatically by kube-prometheus-stack's Grafana sidecar (watches
 # for the grafana_dashboard label across namespaces — see
 # grafana.sidecar.dashboards.searchNamespace: ALL in
-# gitops/platform/controllers/monitoring/release-kube-prometheus-stack.yaml).
+# gitops/platform/controllers/all/monitoring/release-kube-prometheus-stack.yaml).
 # Lives with the app it's about, not with the monitoring stack — same
 # ownership split as everywhere else in this repo. Harmless in Acceptance/
 # Production too, even though only Test currently runs Grafana to render it.

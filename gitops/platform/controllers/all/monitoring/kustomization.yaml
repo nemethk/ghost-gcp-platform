@@ -1,9 +1,9 @@
+# Its HelmRepository sources (grafana, prometheus-community) live in
+# gitops/sources/ instead of here.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: flux-system
 resources:
-  - repository-prometheus-community.yaml
-  - repository-grafana.yaml
   - release-kube-prometheus-stack.yaml
   - release-loki.yaml
   - release-alloy.yaml

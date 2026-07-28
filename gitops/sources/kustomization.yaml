@@ -1,0 +1,13 @@
+# Flux Source objects (HelmRepository/OCIRepository) for every controller,
+# centralized here instead of living beside each release — see cert-manager/
+# and envoy-gateway/ for the HelmRelease objects that reference these by
+# name via sourceRef. gateway-api-crds has none: it pulls a raw upstream
+# manifest through Kustomize's own resources: list, not a Flux source.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: flux-system
+resources:
+  - cert-manager.yaml
+  - envoy-gateway.yaml
+  - grafana.yaml
+  - prometheus-community.yaml

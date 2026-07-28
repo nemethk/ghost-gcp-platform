@@ -14,7 +14,7 @@ spec:
   values:
     # This bounds the envoy-gateway controller itself, not the Envoy
     # data-plane proxy it manages — that's bounded separately, in
-    # gitops/platform/configs/gateway/demo/envoy-proxy.yaml.
+    # gitops/platform/configs/all/gateway/demo/envoy-proxy.yaml.
     deployment:
       envoyGateway:
         resources:

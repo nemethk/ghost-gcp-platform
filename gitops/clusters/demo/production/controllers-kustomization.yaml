@@ -5,7 +5,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 5m
-  path: ./gitops/platform/controllers
+  path: ./gitops/platform/controllers/all
   prune: true
   dependsOn:
     - name: namespaces

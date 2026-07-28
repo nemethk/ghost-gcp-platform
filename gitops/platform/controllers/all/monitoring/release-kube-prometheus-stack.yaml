@@ -2,7 +2,7 @@
 # — laptop resource budget (7 threads/16GB, shared across 3 vClusters)
 # doesn't fit the full stack running 3x simultaneously. Real GKE has no such
 # constraint, so these same manifests run unchanged on all three real
-# environments (gitops/platform/controllers-gke/kustomization.yaml) — the
+# environments (gitops/platform/controllers/gke/kustomization.yaml) — the
 # Test-only restriction was always a demo-track scope decision, not a
 # technical limitation of the manifests themselves.
 #

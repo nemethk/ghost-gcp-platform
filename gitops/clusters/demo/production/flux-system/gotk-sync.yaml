@@ -8,7 +8,7 @@ metadata:
 spec:
   interval: 1m0s
   ref:
-    tag: v0.1.4
+    tag: v0.2.0-production
   secretRef:
     name: flux-system
   url: ssh://git@github.com/nemethk/ghost-gcp-platform

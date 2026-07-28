@@ -37,10 +37,18 @@ locals {
       }
     }
     "5-databases" = {
-      display_name = "Terraform 5-databases — Cloud SQL: test, acceptance, production."
+      display_name = "Terraform 5-databases — Cloud SQL, Ghost's Secret Manager secrets + GSA/Workload Identity bindings, for test/acceptance/production."
       iam_project_roles = {
-        (var.nonprod_project_id)    = ["roles/cloudsql.admin"]
-        (var.production_project_id) = ["roles/cloudsql.admin"]
+        (var.nonprod_project_id) = [
+          "roles/cloudsql.admin",
+          "roles/secretmanager.admin",
+          "roles/iam.serviceAccountAdmin",
+        ]
+        (var.production_project_id) = [
+          "roles/cloudsql.admin",
+          "roles/secretmanager.admin",
+          "roles/iam.serviceAccountAdmin",
+        ]
       }
     }
     "6-vcluster" = {

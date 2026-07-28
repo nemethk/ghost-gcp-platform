@@ -85,9 +85,13 @@ spec:
         requests:
           cpu: 100m
           memory: 128Mi
+        # Bumped from 250m/256Mi — the original limits OOMKilled the
+        # container under real dashboard load (several panels querying
+        # simultaneously on open), observed live: Exit Code 137, container
+        # restarting specifically on dashboard load.
         limits:
-          cpu: 250m
-          memory: 256Mi
+          cpu: 500m
+          memory: 512Mi
       # Prometheus is wired in automatically by this chart; Loki is the one
       # extra datasource actually needed.
       additionalDataSources:

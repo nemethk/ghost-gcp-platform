@@ -9,6 +9,5 @@ namespace: flux-system
 resources:
   - cert-manager.yaml
   - envoy-gateway.yaml
-  - envoy-gateway-crds.yaml
   - grafana.yaml
   - prometheus-community.yaml

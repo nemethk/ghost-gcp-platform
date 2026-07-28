@@ -2,9 +2,18 @@
 # kustomization.yaml's comment for why.
 #
 # Its OCIRepository source lives in gitops/sources/ instead of here.
-apiVersion: kustomize.config.k8s.io/v1beta1
-kind: Kustomization
-namespace: flux-system
+#
+# Envoy Gateway's own CRDs (EnvoyProxy, ClientTrafficPolicy, ...) come from
+# this raw release asset, not a Helm chart: envoyproxy/gateway's
+# gateway-crds-helm chart renders all CRDs as regular templates rather than
+# Helm's special crds/ directory, so the stored Helm release Secret exceeds
+# Kubernetes' 1MiB Secret limit even with the Gateway API half disabled —
+# confirmed live: "Secret ... is invalid: data: Too long". A raw manifest
+# via Kustomize has no such storage step. release.yaml's chart still
+# disables its own bundled CRD install (crds.enabled: false) — its bundled
+# Gateway API CRDs are experimental-channel, which collides with the
+# standard-channel safe-upgrades ValidatingAdmissionPolicy our own
+# gateway-api-crds installs.
 resources:
-  - crds.yaml
+  - https://github.com/envoyproxy/gateway/releases/download/v1.8.3/envoy-gateway-crds.yaml
   - release.yaml

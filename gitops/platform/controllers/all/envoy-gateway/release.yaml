@@ -4,13 +4,11 @@ metadata:
   name: envoy-gateway
 spec:
   interval: 5m
-  # crds.yaml's envoy-gateway-crds release owns Envoy Gateway's own CRDs
-  # (installed with the Gateway API half disabled); this chart's own bundled
-  # CRD install must stay off, or it collides with the standard-channel
-  # ValidatingAdmissionPolicy our own gateway-api-crds installs — see
-  # crds.yaml's comment for the full explanation.
-  dependsOn:
-    - name: envoy-gateway-crds
+  # kustomization.yaml's raw-manifest resource owns Envoy Gateway's own
+  # CRDs; this chart's own bundled CRD install must stay off, or it
+  # collides with the standard-channel ValidatingAdmissionPolicy our own
+  # gateway-api-crds installs — see that kustomization.yaml's comment for
+  # the full explanation.
   chartRef:
     kind: OCIRepository
     name: envoy-gateway

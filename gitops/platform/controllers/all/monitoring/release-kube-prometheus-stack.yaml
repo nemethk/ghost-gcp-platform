@@ -94,10 +94,14 @@ spec:
           memory: 512Mi
       # Prometheus is wired in automatically by this chart; Loki is the one
       # extra datasource actually needed.
+      #
+      # monitoring-loki, not loki: Flux's helm-controller prefixes the Helm
+      # release name with targetNamespace when releaseName isn't set (see
+      # release-alloy.yaml's loki.write endpoint comment for the same fix).
       additionalDataSources:
         - name: Loki
           type: loki
-          url: http://loki.monitoring.svc.cluster.local:3100
+          url: http://monitoring-loki.monitoring.svc.cluster.local:3100
           access: proxy
       # searchNamespace: ALL — dashboards live with the app they're about
       # (gitops/apps/base/ghost/dashboard.yaml, in the ghost namespace), not

@@ -1,5 +1,6 @@
-# SelfSigned only — see TLS.md for why (ACME has no local-only validation
-# path). The shared Gateway (gateway.yaml) carries the
+# SelfSigned only — ACME has no local-only validation path (no public HTTP
+# reachability behind NAT, no public DNS for a real domain). The shared
+# Gateway (gateway.yaml) carries the
 # cert-manager.io/cluster-issuer annotation, which cert-manager's Gateway API
 # integration (gateway-shim, enabled via values.config.enableGatewayAPI on the
 # HelmRelease) picks up to create the matching Certificate automatically — no

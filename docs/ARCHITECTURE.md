@@ -21,7 +21,7 @@ on.
 
 Three environments, two GCP projects, two GKE clusters:
 
-HLD [TODO]
+![HLD](hld/ghost-gcp-platform-hld.png)
 
 **Production gets full physical isolation** — its own project, its own GKE
 cluster, its own VPC. This is the strongest isolation boundary GCP offers

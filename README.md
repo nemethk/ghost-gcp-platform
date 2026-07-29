@@ -40,6 +40,14 @@ content.
 | [`docs/DEMO.md`](docs/DEMO.md) | What the local demo shows, and how to confirm what's actually running |
 | [`docs/PREREQUISITES.md`](docs/PREREQUISITES.md) | Every CLI tool needed, and what each is for |
 
+## Presentation
+
+The CTO-facing deck, covering the same solution as `docs/ARCHITECTURE.md`
+at a higher altitude — [`docs/presentation/slides.md`](docs/presentation/slides.md)
+is the source, also exported as
+[`slides.pdf`](docs/presentation/slides.pdf) and
+[`slides.html`](docs/presentation/slides.html).
+
 ## Quick start
 
 The fastest way to see this working: bring up the local demo.

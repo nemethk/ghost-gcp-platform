@@ -52,7 +52,7 @@ up-%: cluster-%
 	kubectl --context $$ctx apply --namespace ghost -f mysql.yaml || exit 1
 
 up: $(addprefix up-,$(ENVS))
-	@echo "Reached via vind's built-in LoadBalancer (LB.md) — add each"
+	@echo "Reached via vind's built-in LoadBalancer — add each"
 	@echo "environment's own bridge IP to /etc/hosts first:"
 	@echo "  kubectl --context vcluster-docker_test       get svc -n envoy-gateway-system"
 	@echo "  kubectl --context vcluster-docker_acceptance get svc -n envoy-gateway-system"

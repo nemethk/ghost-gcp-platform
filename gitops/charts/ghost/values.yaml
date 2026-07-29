@@ -11,7 +11,7 @@
 # failure, not from redundant replicas; real capacity comes from vertical
 # `resources` (see apps/gke/<env>/ghost-values.yaml) and, per Ghost's own
 # recommended scale/HA path, a cache/CDN layer in front — see
-# docs/architecture.md.
+# docs/ROADMAP.md.
 replicaCount: 1
 
 image:

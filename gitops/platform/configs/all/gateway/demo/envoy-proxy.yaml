@@ -1,6 +1,6 @@
 # Only bounds the data-plane proxy's resources now — no node-pinning needed.
 # Ghost is reached via vind's built-in per-Service LoadBalancer/HAProxy
-# container (LB.md), which forwards to the proxy's Service regardless of
+# container, which forwards to the proxy's Service regardless of
 # which node the pod actually lands on. The earlier hostNetwork/nodeSelector
 # approach (for making Docker's own port-publishing reach the proxy
 # directly) was abandoned — EnvoyProxy's pod schema doesn't even expose
